@@ -1,0 +1,61 @@
+
+.stocks-section { padding-top: 24px; display: flex; flex-direction: column; gap: 18px; }
+.stocks-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid #ebe8e5; }
+.stocks-heading .eyebrow { font-size: 10px; margin: 0 0 6px; color: #6543ff; letter-spacing: .5px; }
+.stocks-heading h1 { font-size: 30px; letter-spacing: -1px; color: #201e1d; margin: 0 0 5px; }
+.stocks-heading p:last-child { color: #8b8580; font-size: 13px; margin: 0; }
+.stocks-record,.stocks-sell { background: #5535ff; color: white; border: 0; border-radius: 8px; text-decoration: none; padding: 9px 14px; font-size: 12px; white-space: nowrap; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; }
+.stocks-toolbar { background: white; border: 1px solid #ebe8e5; border-radius: 14px; padding: 12px 16px; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.stocks-toolbar > input { width: min(450px,100%); min-height: 36px; padding: 8px 12px; font-size: 12px; background: #fafafa; }
+.stocks-toolbar > div { display: flex; gap: 6px; }
+.stocks-toolbar button { border: 0; border-radius: 8px; background: #f5f5f5; padding: 8px 12px; min-height: 34px; font-size: 11px; white-space: nowrap; }
+.stocks-toolbar button.active { background: #5535ff; color: white; }
+.stocks-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
+.stocks-summary article { border: 1px solid #ebe8e5; border-radius: 12px; background: white; padding: 16px; }
+.stocks-summary article > span { display: block; font-size: 10px; color: #8c8792; margin-bottom: 8px; }
+.stocks-summary strong { font: 24px ui-monospace,monospace; }
+.stocks-summary small { font: 11px ui-sans-serif,system-ui; color: #938d98; }
+.stocks-value { color: #6543ff; display: flex; flex-wrap: wrap; gap: 8px; }
+.stocks-low { color: #e99500; }
+.stocks-table-container { border: 1px solid #ebe8e5; background: white; border-radius: 14px; overflow: auto; min-height: 0; }
+.stocks-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 11px; }
+.stocks-table th { background: #fafafa; color: #595263; font-weight: 500; text-transform: uppercase; font-size: 10px; padding: 12px 14px; white-space: nowrap; position: sticky; top: 0; z-index: 1; }
+.stocks-table td { padding: 8px 14px; border-top: 1px solid #f3f1ef; }
+.stocks-table td:nth-child(3),.stocks-table td:nth-child(6) { font-family: ui-monospace,monospace; white-space: nowrap; }
+.stocks-product { display: flex; align-items: center; gap: 10px; min-width: 170px; }
+.stocks-product > img,.stocks-product > span { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; flex-shrink: 0; }
+.stocks-product > span { display: grid; place-items: center; background: #f4f3f3; color: #a19a94; font-size: 20px; }
+.stocks-product strong { display: block; font-size: 11px; }
+.stocks-product small { display: block; font-size: 9px; margin-top: 3px; }
+.stocks-medium { background: #efedff; color: #5436df; padding: 3px 6px; border-radius: 5px; white-space: nowrap; font-size: 10px; }
+.stocks-adjust { display: flex; align-items: center; gap: 6px; }
+.stocks-adjust > div { display: flex; border: 1px solid #e6e3e1; border-radius: 7px; overflow: hidden; flex-shrink: 0; }
+.stocks-adjust input { width: 48px; min-height: 28px; height: 28px; padding: 3px; text-align: center; border: 0; border-radius: 0; font-size: 11px; appearance: textfield; }
+.stocks-adjust input::-webkit-inner-spin-button { appearance: none; }
+.stocks-adjust button { border: 0; background: #fafafa; padding: 4px 8px; min-height: 28px; font-size: 11px; }
+.stocks-adjust .stocks-save { color: #5639da; border-radius: 5px; background: #f2efff; }
+.stocks-save:disabled { opacity: .4; }
+.stocks-status { display: inline-block; padding: 4px 8px; border-radius: 20px; font-size: 9px; white-space: nowrap; background: #d4fbea; color: #006d54; }
+.stocks-status.is-low { background: #fff1c9; color: #a55b00; }
+.stocks-sell { min-height: 28px; padding: 4px 10px; font-size: 10px; }
+.stocks-error { color: #a43232; font-size: 10px; max-width: 200px; margin: 4px 0 0; }
+.stocks-empty { text-align: center; padding: 36px !important; color: #8b8580; }
+.stocks-pagination { display: flex; align-items: center; gap: 16px; justify-content: space-between; font-size: 11px; color: #787080; }
+.stocks-pagination label,.stocks-pagination nav { display: flex; align-items: center; gap: 10px; font-size: 11px; }
+.stocks-pagination select { width: 64px; min-height: 32px; margin: 0; padding: 4px 8px; font-size: 11px; }
+.stocks-pagination button { border: 1px solid #e4e0e9; border-radius: 7px; background: white; padding: 7px 12px; min-height: 32px; font-size: 11px; }
+@media(min-width:1101px) and (min-height:750px) {
+ .workspace-shell.stocks-one-page { height: 100dvh; min-height: 0; grid-template-rows: minmax(0,1fr) 36px; overflow: hidden; }
+ .stocks-one-page > main { min-height: 0; overflow: hidden; padding-bottom: 10px; }
+ .stocks-one-page .stocks-section { height: 100%; gap: 12px; padding-top: 18px; }
+ .stocks-one-page .stocks-heading { padding-bottom: 12px; }
+ .stocks-one-page .stocks-heading h1 { font-size: 26px; }
+ .stocks-one-page .stocks-summary article { padding: 10px 14px; }
+ .stocks-one-page .stocks-summary strong { font-size: 21px; }
+ .stocks-one-page .stocks-table-container { flex: 1; }
+ .stocks-one-page .stocks-table td { padding: 5px 12px; }
+ .stocks-one-page .stocks-product > img,.stocks-one-page .stocks-product > span { width: 28px; height: 28px; }
+ .stocks-one-page > footer { padding-block: 8px; }
+}
+@media(max-width:1000px) { .stocks-toolbar { flex-wrap: wrap; } .stocks-toolbar > input { width: 100%; } .stocks-pagination { flex-wrap: wrap; } .stocks-table { min-width: 950px; } }
+@media(max-width:600px) { .stocks-heading { flex-wrap: wrap; } .stocks-heading h1 { font-size: 26px; } .stocks-summary { grid-template-columns: 1fr; gap: 8px; } .stocks-pagination nav { width: 100%; justify-content: space-between; } .stocks-adjust button,.stocks-sell { min-height: 36px; } }

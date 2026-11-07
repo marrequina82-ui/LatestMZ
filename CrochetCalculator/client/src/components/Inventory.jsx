@@ -1,70 +1,39 @@
-import { useEffect, useState } from 'react'
-
+import { useEffect, useRef, useState } from 'react'
+import { Plus, Search, Trash2, Pencil, TriangleAlert, X, RefreshCw, Boxes } from 'lucide-react'
 import { request } from '../utils/api'
+import '../styles/materials.css'
 
-function StockItem({ item, priceOf, onSaved }) {
-  const [quantity, setQuantity] = useState(String(item.stock ?? 0))
+const categories = ['Yarn & Thread', 'Notions & Hardware', 'Stuffing & Filling', 'Packaging']
+const blank = () => ({ name: '', category: categories[0], spec: '', unit: 'pcs', supplier: '', notes: '', quantity: 0, unitCost: 0, minimum: 0 })
+const money = value => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(value)
+function MaterialForm({ item, onClose, onSaved }) {
+  const [draft, setDraft] = useState(() => item ? { ...item } : blank())
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
+  const ref = useRef(null)
+  useEffect(() => { const dialog = ref.current; const focus = document.activeElement; dialog.showModal(); return () => { dialog.close(); focus?.focus() } }, [])
   async function save(event) {
-    event.preventDefault()
-    if (quantity === '' || !Number.isInteger(Number(quantity)) || Number(quantity) < 0 || Number(quantity) > 1000000) { setError('Enter a whole number from 0 to 1,000,000.'); return }
-    setBusy(true); setError(''); setNotice('')
-    try {
-      const result = await request(`/api/projects/${item.id}/stock`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stock: Number(quantity), previous: item.stock ?? 0 }) })
-      onSaved(result); setNotice('Stock saved.')
-    } catch (err) { setError(err.message) }
-    finally { setBusy(false) }
+    event.preventDefault(); setBusy(true); setError('')
+    try { const { id: _id, ...material } = draft; const { id: _previousId, ...previous } = item || {}; const saved = await request(item ? `/api/materials/${item.id}` : '/api/materials', { method: item ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ material, previous }) }); onSaved(saved); onClose() }
+    catch (err) { setError(err.message) } finally { setBusy(false) }
   }
-  return <article className="inventory-item">
-    <div className="inventory-product">
-      {item.image ? <img src={item.image} alt="" /> : <span className="inventory-placeholder" aria-hidden="true">✳</span>}
-      <div>
-        <div className="card-tags" style={{ marginBottom: '6px' }}>
-          <span className={`category-tag ${(item.category || 'Crochet') === 'Fuzzy Wire' ? 'category-fuzzy' : 'category-crochet'}`}>
-            {(item.category || 'Crochet') === 'Fuzzy Wire' ? '✨ Fuzzy Wire' : '🧶 Crochet'}
-          </span>
-          <span className={`availability ${item.stock > 0 ? 'available' : ''}`}>
-            {item.stock > 0 ? 'Available' : 'Not available'}
-          </span>
-        </div>
-        <h2>{item.name}</h2>
-        <p>{priceOf(item)}</p>
-      </div>
-    </div>
-    <form onSubmit={save}><label htmlFor={`stock-${item.id}`}>Stock quantity</label><div className="stock-controls"><input id={`stock-${item.id}`} type="number" inputMode="numeric" min="0" max="1000000" step="1" required value={quantity} disabled={busy} onChange={e => { setQuantity(e.target.value); setNotice('') }} /><button type="submit" className="primary" disabled={busy || quantity === String(item.stock ?? 0)}>{busy ? 'Saving…' : 'Save stock'}</button></div>{error && <p className="stock-error" role="alert">{error}</p>}{notice && <p className="stock-success" role="status">{notice}</p>}</form>
-  </article>
+  const change = (key, value) => setDraft(old => ({ ...old, [key]: value }))
+  return <dialog ref={ref} className="material-modal" aria-labelledby="material-modal-title" onCancel={event => { event.preventDefault(); if (!busy) onClose() }}><form onSubmit={save}><header><span className="material-modal-icon"><Boxes size={17} aria-hidden="true" /></span><h2 id="material-modal-title">{item ? 'Edit Raw Material / Supply' : 'Add Raw Material / Supply'}</h2><button type="button" aria-label="Close material editor" disabled={busy} onClick={onClose}><X size={18} /></button></header><fieldset disabled={busy}><div className="material-form-grid"><label>Supply Item Name *<input required maxLength={200} placeholder="e.g. Milk Cotton Yarn 5-ply" value={draft.name} onChange={e=>change('name',e.target.value)} /></label><label>Category<select value={draft.category} onChange={e=>change('category',e.target.value)}>{categories.map(category=><option key={category}>{category}</option>)}</select></label><label className="material-form-full">Brand / Colorway / Shade Code<input maxLength={200} placeholder="e.g. Dapper Dream #22 Mint Green" value={draft.spec} onChange={e=>change('spec',e.target.value)} /></label><div className="material-form-full material-form-three"><label>{item ? 'Stock on Hand' : 'Initial Stock'}<input required type="number" min="0" max="10000000" step="any" value={draft.quantity} onChange={e=>change('quantity',e.target.value===''?'':Number(e.target.value))} /></label><label>Unit<input required maxLength={200} placeholder="e.g. skeins" value={draft.unit} onChange={e=>change('unit',e.target.value)} /></label><label>Cost per Unit (?)<input required type="number" min="0" max="10000000" step="0.01" value={draft.unitCost} onChange={e=>change('unitCost',e.target.value===''?'':Number(e.target.value))} /></label></div><label>Low Stock Threshold<input required type="number" min="0" max="10000000" step="any" value={draft.minimum} onChange={e=>change('minimum',e.target.value===''?'':Number(e.target.value))} /><small>Triggers reorder alert</small></label><label>Supplier / Store<input maxLength={200} placeholder="e.g. Shopee / Divisoria" value={draft.supplier} onChange={e=>change('supplier',e.target.value)} /></label></div></fieldset>{error && <p className="notice" role="alert">{error}</p>}<footer><button type="button" disabled={busy} onClick={onClose}>Cancel</button><button className="primary" disabled={busy}>{busy ? 'Saving?' : item ? 'Save Changes' : 'Add to Inventory'}</button></footer></form></dialog>
 }
-
-export default function Inventory({ priceOf, onStockChange }) {
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [filter, setFilter] = useState('all')
-  const [categoryFilter, setCategoryFilter] = useState('all')
-  const [query, setQuery] = useState('')
-  const [revision, setRevision] = useState(0)
-  useEffect(() => {
-    let active = true
-    request('/api/projects').then(data => {
-      if (!Array.isArray(data) || data.some(item => !Number.isInteger(item.stock))) throw new Error('Restart the updated backend to enable inventory.')
-      if (active) setItems(data)
-    }).catch(err => { if (active) setError(err.message) }).finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [revision])
-  function saved(result) { setItems(list => list.map(item => item.id === result.id ? { ...item, stock: result.stock } : item)); onStockChange(result) }
-  const available = items.filter(item => item.stock > 0).length
-  const crochetCount = items.filter(item => (item.category || 'Crochet') === 'Crochet').length
-  const fuzzyCount = items.filter(item => item.category === 'Fuzzy Wire').length
-  const visible = items.filter(item =>
-    item.name.toLowerCase().includes(query.toLowerCase()) &&
-    (categoryFilter === 'all' || (item.category || 'Crochet') === categoryFilter) &&
-    (filter === 'all' || (filter === 'available' ? item.stock > 0 : item.stock === 0))
-  )
-  return <section aria-labelledby="inventory-title"><div className="section-heading"><div><p className="eyebrow">YOUR PRODUCTS</p><h1 id="inventory-title" className="workspace-page-title">Inventory</h1></div><a href="#dashboard" className="inventory-link">Manage projects →</a></div><p className="page-description">Set the number of items ready to sell. Zero stock means not available.</p>
-    {!loading && !error && <div className="inventory-stats"><span><strong>{items.length}</strong> Total Products<br /><small>{crochetCount} Crochet · {fuzzyCount} Fuzzy Wire</small></span><span><strong>{available}</strong> Available to sell</span><span><strong>{items.length - available}</strong> Out of stock</span></div>}
-    <div className="inventory-toolbar"><input type="search" aria-label="Search inventory" placeholder="Search products…" value={query} onChange={e => setQuery(e.target.value)} /><select aria-label="Filter by craft classification" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}><option value="all">All crafts ({items.length})</option><option value="Crochet">🧶 Crochet ({crochetCount})</option><option value="Fuzzy Wire">✨ Fuzzy Wire ({fuzzyCount})</option></select><select aria-label="Filter by availability" value={filter} onChange={e => setFilter(e.target.value)}><option value="all">All availability</option><option value="available">Available in stock</option><option value="unavailable">Out of stock</option></select><button type="button" className="modal-close" disabled={loading} onClick={() => { setLoading(true); setError(''); setRevision(value => value + 1) }}>Refresh</button></div>
-    {loading ? <p role="status">Loading inventory…</p> : error ? <div className="notice" role="alert">{error}</div> : <div className="inventory-list">{visible.map(item => <StockItem key={`${revision}-${item.id}`} item={item} priceOf={priceOf} onSaved={saved} />)}{visible.length === 0 && <div className="sales-empty"><h2>{items.length ? 'No matching products' : 'Your inventory starts with a project'}</h2><p>{items.length ? 'Try a different search, classification, or availability filter.' : 'Create a project on the dashboard, then set its stock here.'}</p><a href="#dashboard">Go to dashboard</a></div>}</div>}
-  </section>
+export default function Inventory() {
+  const [items,setItems] = useState([])
+  const [loading,setLoading] = useState(true)
+  const [error,setError] = useState('')
+  const [query,setQuery] = useState('')
+  const [category,setCategory] = useState('all')
+  const [editor,setEditor] = useState(null)
+  const [deleting,setDeleting] = useState(null)
+  const [page,setPage] = useState(1)
+  const [pageSize,setPageSize] = useState(10)
+  async function refresh() { setLoading(true); setError(''); try { setItems(await request('/api/materials')) } catch(err) { setError(err.message) } finally { setLoading(false) } }
+  useEffect(() => { let active = true; request('/api/materials').then(data => { if(active) setItems(data) }).catch(err => { if(active) setError(err.message) }).finally(() => { if(active) setLoading(false) }); return () => { active = false } }, [])
+  async function remove(item) { if (!window.confirm(`Delete ${item.name} from materials inventory?`)) return; setDeleting(item.id); setError(''); try { await request(`/api/materials/${item.id}`,{method:'DELETE'}); setItems(list => list.filter(row => row.id !== item.id)) } catch(err) { setError(err.message) } finally { setDeleting(null) } }
+  const filtered = items.filter(item => (category === 'all' || item.category === category) && [item.name,item.spec,item.supplier,item.notes].join(' ').toLowerCase().includes(query.toLowerCase()))
+  const pages = Math.max(1,Math.ceil(filtered.length / pageSize)), current = Math.min(page,pages)
+  return <section className="materials-section"><header className="materials-heading"><div><p className="eyebrow">RAW CRAFT SUPPLIES</p><h1>Materials Inventory</h1><p>Yarns, hooks, eyes, stuffing, and packaging stock levels.</p></div><div><button onClick={refresh} disabled={loading} aria-label="Refresh materials"><RefreshCw size={16} /></button><button className="primary" onClick={() => setEditor({})}><Plus size={16} /> Add Material</button></div></header><div className="materials-toolbar"><div className="materials-search"><Search size={16} /><input type="search" aria-label="Search materials" placeholder="Search yarns, notions, suppliers, shade codes?" value={query} onChange={e => { setQuery(e.target.value); setPage(1) }} /></div><div className="materials-filters">{['all',...categories].map(value => <button key={value} aria-pressed={category===value} className={category===value?'active':''} onClick={() => { setCategory(value); setPage(1) }}>{value==='all'?'All Supplies':value}</button>)}</div></div><div className="materials-summary"><article><span>TOTAL MATERIAL TYPES</span><strong>{filtered.length} supplies</strong></article><article><span>INVENTORY ASSET VALUE</span><strong>{money(filtered.reduce((sum,item)=>sum+item.quantity*item.unitCost,0))}</strong></article><article><span>LOW STOCK WARNINGS</span><strong className="materials-warning">{filtered.filter(item=>item.quantity<=item.minimum).length} items to reorder</strong></article></div>{error && <div className="notice" role="alert">{error}<button onClick={refresh}>Retry</button></div>}{loading ? <p role="status">Loading materials?</p> : !error && <><div className="materials-table-wrap"><table><thead><tr>{['Supply / item','Category','Color / shade / spec','On hand','Unit cost','Total value','Supplier','Actions'].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{filtered.slice((current-1)*pageSize,current*pageSize).map(item=><tr key={item.id} className={item.quantity<=item.minimum?'material-low':''}><td><div className="material-name">{item.quantity<=item.minimum && <TriangleAlert size={16} aria-label="Low stock" />}<div><strong>{item.name}</strong><small>{item.notes}</small></div></div></td><td><span className="material-category">{item.category}</span></td><td>{item.spec || '?'}</td><td><span className="material-quantity">{item.quantity} <small>{item.unit}</small></span></td><td>{money(item.unitCost)}</td><td>{money(item.quantity*item.unitCost)}</td><td>{item.supplier || '?'}</td><td><div className="material-actions"><button aria-label={`Edit ${item.name}`} onClick={()=>setEditor(item)}><Pencil size={15} /></button><button aria-label={`Delete ${item.name}`} disabled={deleting===item.id} onClick={()=>remove(item)}><Trash2 size={15} /></button></div></td></tr>)}{!filtered.length && <tr><td colSpan="8" className="materials-empty">{items.length ? 'No supplies match your filters.' : 'No materials yet. Add your first craft supply to get started.'}</td></tr>}</tbody></table></div><nav className="materials-pagination" aria-label="Material pages"><div className="materials-page-info"><label>Rows per page<select value={pageSize} onChange={event=>{setPageSize(Number(event.target.value));setPage(1)}}>{[5,10,20,50].map(size=><option key={size}>{size}</option>)}</select></label><span>{filtered.length ? (current-1)*pageSize+1 : 0}?{Math.min(current*pageSize,filtered.length)} of {filtered.length} materials</span></div><div className="materials-page-buttons"><button aria-label="First page" disabled={current===1} onClick={()=>setPage(1)}>First</button><button disabled={current===1} onClick={()=>setPage(current-1)}>Previous</button>{Array.from({length:Math.min(5,pages)},(_,index)=>Math.max(1,Math.min(current-2,pages-4))+index).map(number=><button key={number} aria-label={`Page ${number}`} aria-current={number===current?'page':undefined} onClick={()=>setPage(number)}>{number}</button>)}<button disabled={current===pages} onClick={()=>setPage(current+1)}>Next</button><button aria-label="Last page" disabled={current===pages} onClick={()=>setPage(pages)}>Last</button></div></nav></>}{editor && <MaterialForm item={editor.id ? editor : null} onClose={()=>setEditor(null)} onSaved={saved=>setItems(list=>[saved,...list.filter(item=>item.id!==saved.id)])} />}</section>
 }

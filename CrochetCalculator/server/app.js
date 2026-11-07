@@ -114,14 +114,44 @@ export function createHandler(databaseProvider = getDatabase) {
         const { rows } = await database.query('SELECT id,data,stock FROM projects WHERE stock>0 ORDER BY updated_at DESC')
         return reply(200, { items: rows.map(publicItem), contact: { facebook: process.env.SHOP_FACEBOOK_URL || '', messenger: process.env.SHOP_MESSENGER_URL || '', email: process.env.SHOP_EMAIL || '' } })
       }
+      const materialRoute = /^\/api\/materials\/(\d+)$/.exec(path)
+      const materialRequest = (path === '/api/materials' && ['GET', 'POST'].includes(method)) || (materialRoute && ['PUT', 'DELETE'].includes(method))
       const route = /^\/api\/projects\/(\d+)(\/stock)?$/.exec(path)
-      if (!(path === '/api/auth/me' && method === 'GET') && !(path === '/api/activity' && method === 'GET') && !(path === '/api/projects' && ['GET','POST'].includes(method)) && !(route && (route[2] ? method === 'PATCH' : ['PUT','DELETE'].includes(method)))) fail(404, 'Endpoint not found.')
+      if (!materialRequest && !(path === '/api/auth/me' && method === 'GET') && !(path === '/api/activity' && method === 'GET') && !(path === '/api/projects' && ['GET','POST'].includes(method)) && !(route && (route[2] ? method === 'PATCH' : ['PUT','DELETE'].includes(method)))) fail(404, 'Endpoint not found.')
       const token = sessionToken(req)
       if (!token) fail(401, 'Please log in to continue.')
       const { rows: users } = await database.query('SELECT u.id,u.email FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>NOW()', [hash(token)])
       if (!users.length) fail(401, 'Your session has expired. Please log in again.')
       const user = { id: Number(users[0].id), email: users[0].email }
       if (path === '/api/auth/me') return reply(200, user)
+      if (materialRequest) {
+        if (method === 'GET') {
+          const { rows } = await database.query('SELECT id,data FROM materials ORDER BY id DESC')
+          return reply(200, rows.map(row => ({ ...row.data, id: Number(row.id) })))
+        }
+        const materialId = materialRoute ? Number(materialRoute[1]) : null
+        if (materialRoute && (!Number.isSafeInteger(materialId) || materialId <= 0)) fail(400, 'Invalid material ID.')
+        let materialSql, materialValues
+        if (method === 'DELETE') { materialSql = 'DELETE FROM materials WHERE id=$1 RETURNING id'; materialValues = [materialId] }
+        else {
+          const input = await body(req, 16384)
+          const data = input.material
+          const categories = ['Yarn & Thread', 'Notions & Hardware', 'Stuffing & Filling', 'Packaging']
+          if (!data || typeof data !== 'object') fail(400, 'Enter material details.')
+          for (const key of ['name', 'category', 'spec', 'unit', 'supplier', 'notes']) {
+            if (typeof data[key] !== 'string' || data[key].length > (key === 'notes' ? 1000 : 200)) fail(400, 'Invalid material details.')
+          }
+          if (!data.name.trim() || !data.unit.trim() || !categories.includes(data.category)) fail(400, 'Enter a name, unit, and category.')
+          for (const key of ['quantity', 'unitCost', 'minimum']) if (typeof data[key] !== 'number' || !Number.isFinite(data[key]) || data[key] < 0 || data[key] > 10000000) fail(400, 'Enter valid nonnegative quantities and costs.')
+          const clean = Object.fromEntries(['name','category','spec','unit','supplier','notes','quantity','unitCost','minimum'].map(key => [key, data[key]]))
+          materialSql = method === 'POST' ? 'INSERT INTO materials(data) VALUES($1) RETURNING id,data' : 'UPDATE materials SET data=$1,updated_at=NOW() WHERE id=$2 AND data=$3::jsonb RETURNING id,data'
+          materialValues = method === 'POST' ? [JSON.stringify(clean)] : [JSON.stringify(clean), materialId, JSON.stringify(input.previous)]
+        }
+        const { rows } = database.mutate ? await database.mutate(materialSql, materialValues, user.id) : await database.query(materialSql, materialValues)
+        if (!rows.length) fail(409, 'This material changed or was removed. Refresh and try again.')
+        return reply(method === 'POST' ? 201 : 200, rows[0].data ? { ...rows[0].data, id: Number(rows[0].id) } : { id: Number(rows[0].id) })
+      }
+
       if (path === '/api/activity') {
         const before = url.searchParams.get('before') || '9223372036854775807'
         if (!/^[1-9]\d*$/.test(before) || BigInt(before) > 9223372036854775807n) fail(400, 'Invalid history cursor.')

@@ -17,11 +17,11 @@ export function createSupabaseDatabase(env = process.env, request = fetch) {
     rpc,
     async login(pin, tokenHash, oldHash) { return (await rpc('login', { pin, tokenHash, oldHash })).rows[0] },
     async mutate(sql, values, actor) {
-      const operation = sql.startsWith('DELETE') ? 'delete' : sql.includes('SET stock=') ? 'stock' : sql.startsWith('INSERT') ? 'create' : 'update'
+      const operation = sql.includes('materials') ? (sql.startsWith('DELETE') ? 'materials_delete' : sql.startsWith('INSERT') ? 'materials_create' : 'materials_update') : sql.startsWith('DELETE') ? 'delete' : sql.includes('SET stock=') ? 'stock' : sql.startsWith('INSERT') ? 'create' : 'update'
       return rpc(operation, { values, actor })
     },
     query(sql, values = []) {
-      const operation = sql.startsWith('DELETE FROM sessions') ? 'logout'
+      const operation = sql === 'SELECT id,data FROM materials ORDER BY id DESC' ? 'materials_list' : sql.startsWith('DELETE FROM sessions') ? 'logout'
         : sql.startsWith('SELECT u.id') ? 'session'
         : sql.startsWith('SELECT h.id') ? 'activity'
         : sql.includes('WHERE stock>0') ? 'catalog'

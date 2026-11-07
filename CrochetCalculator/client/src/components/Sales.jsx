@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { Search, ShoppingBag, ReceiptText, Printer, X } from 'lucide-react'
+import '../styles/sales-register.css'
 
 function SaleModal({ onClose, saving, children }) {
   const dialogRef = useRef(null)
@@ -29,65 +31,23 @@ function SaleModal({ onClose, saving, children }) {
   )
 }
 
-export default function Sales({ projects, money, costs, onUpdateProject }) {
-  const [categoryView, setCategoryView] = useState('combined') // 'combined' | 'Crochet' | 'Fuzzy Wire'
-  const [modalOpen, setModalOpen] = useState(false)
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[0]?.id || '')
+export default function Sales({ initialProject, projects, money, costs, onUpdateProject }) {
+  const [search, setSearch] = useState('')
+  const [channelFilter, setChannelFilter] = useState('All Channels')
+  const [customer, setCustomer] = useState('')
+  const [channel, setChannel] = useState('Direct Walk-in')
+  const [payment, setPayment] = useState('Cash')
+  const [receipt, setReceipt] = useState(null)
+  const [page, setPage] = useState(1)
+  const channels = ['Instagram DM', 'Facebook Messenger', 'Shopee', 'TikTok Shop', 'Craft Fair', 'Direct Walk-in']
+  const [modalOpen, setModalOpen] = useState(Boolean(initialProject))
+  const [selectedProjectId, setSelectedProjectId] = useState(initialProject?.id || projects[0]?.id || '')
   const [quantity, setQuantity] = useState('1')
-  const [salePrice, setSalePrice] = useState('')
+  const [salePrice, setSalePrice] = useState(initialProject ? costs(initialProject).total.toFixed(2) : '')
   const [saleNote, setSaleNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
-  // Calculate stats per category and combined
-  const calculateCategoryStats = (filterCategory) => {
-    const list = filterCategory === 'combined'
-      ? projects
-      : projects.filter(p => (p.category || 'Crochet') === filterCategory)
-
-    let totalRevenue = 0
-    let totalSold = 0
-    let totalProfit = 0
-    let inventoryValue = 0
-
-    list.forEach(p => {
-      const breakdown = costs(p)
-      const sold = Number(p.sold || 0)
-      const stock = Number(p.stock || 0)
-      const price = breakdown.total
-      const profitPerUnit = breakdown.profit
-
-      // Custom recorded sales or default unit price
-      const projectSales = Array.isArray(p.sales) ? p.sales : []
-      if (projectSales.length > 0) {
-        projectSales.forEach(s => {
-          const qty = Number(s.quantity || 1)
-          const sPrice = Number(s.price || price)
-          totalRevenue += sPrice * qty
-          totalProfit += profitPerUnit * qty
-        })
-      } else if (sold > 0) {
-        totalRevenue += price * sold
-        totalProfit += profitPerUnit * sold
-      }
-
-      totalSold += sold
-      inventoryValue += price * stock
-    })
-
-    return { totalRevenue, totalSold, totalProfit, inventoryValue, count: list.length }
-  }
-
-  const combinedStats = calculateCategoryStats('combined')
-  const crochetStats = calculateCategoryStats('Crochet')
-  const fuzzyStats = calculateCategoryStats('Fuzzy Wire')
-
-  const currentStats = categoryView === 'combined'
-    ? combinedStats
-    : categoryView === 'Crochet'
-      ? crochetStats
-      : fuzzyStats
 
   // Gather all sales records into a timeline
   const allSales = []
@@ -103,9 +63,10 @@ export default function Sales({ projects, money, costs, onUpdateProject }) {
         category: pCategory,
         currency: p.currency,
         quantity: Number(s.quantity || 1),
-        price: Number(s.price || breakdown.total),
-        total: Number(s.price || breakdown.total) * Number(s.quantity || 1),
-        profit: breakdown.profit * Number(s.quantity || 1),
+        price: Number(s.price ?? breakdown.total),
+        total: Number(s.price ?? breakdown.total) * Number(s.quantity || 1),
+        profit: (Number(s.price ?? breakdown.total) - (breakdown.total - breakdown.profit)) * Number(s.quantity || 1),
+        customer: s.customer || 'Not recorded', channel: s.channel || 'Not recorded', payment: s.payment || 'Not recorded', receipt: s.receipt || `MZ-${p.id}-${s.id || s.date}`,
         date: s.date || new Date().toISOString(),
         note: s.note || '',
       })
@@ -115,13 +76,11 @@ export default function Sales({ projects, money, costs, onUpdateProject }) {
   // Sort newest first
   allSales.sort((a, b) => new Date(b.date) - new Date(a.date))
 
-  const filteredSales = categoryView === 'combined'
-    ? allSales
-    : allSales.filter(s => s.category === categoryView)
+  const filteredSales = allSales.filter(s => (channelFilter === 'All Channels' || s.channel === channelFilter) && [s.customer, s.receipt, s.projectName, s.note].join(' ').toLowerCase().includes(search.toLowerCase()))
 
   // Open modal and prefill price
   const openRecordModal = () => {
-    const first = projects.find(p => categoryView === 'combined' || (p.category || 'Crochet') === categoryView) || projects[0]
+    const first = projects[0]
     if (first) {
       setSelectedProjectId(first.id)
       setSalePrice(String(costs(first).total.toFixed(2)))
@@ -159,6 +118,8 @@ export default function Sales({ projects, money, costs, onUpdateProject }) {
         price: unitPrice,
         date: new Date().toISOString(),
         note: saleNote.trim(),
+        customer: customer.trim(), channel, payment,
+        receipt: `MZ-${new Date().getFullYear()}-${Date.now()}`,
       }
 
       const updatedSales = [...(Array.isArray(target.sales) ? target.sales : []), newSale]
@@ -167,6 +128,7 @@ export default function Sales({ projects, money, costs, onUpdateProject }) {
 
       const updatedProject = {
         ...target,
+        currency: 'PHP',
         sold: updatedSold,
         sales: updatedSales,
         stock: updatedStock,
@@ -186,7 +148,8 @@ export default function Sales({ projects, money, costs, onUpdateProject }) {
       const saved = await res.json()
       onUpdateProject(saved)
       setSuccess(`Recorded sale for ${qty} × ${target.name}!`)
-      setTimeout(() => setModalOpen(false), 800)
+      setModalOpen(false)
+      setReceipt({ ...newSale, projectName: target.name, customer: customer.trim() || 'Not recorded', total: unitPrice * qty, profit: (unitPrice - (costs(target).total - costs(target).profit)) * qty })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -195,232 +158,32 @@ export default function Sales({ projects, money, costs, onUpdateProject }) {
   }
 
   // Currency helper (use PHP or first project's currency)
-  const currency = projects[0]?.currency || 'PHP'
 
-  // Percentage shares for combined bar
-  const totalRev = combinedStats.totalRevenue || 1
-  const crochetShare = Math.round((crochetStats.totalRevenue / totalRev) * 100)
-  const fuzzyShare = 100 - crochetShare
 
   return (
     <section className="sales-section" aria-labelledby="sales-title">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">REVENUE &amp; PERFORMANCE</p>
-          <h1 id="sales-title" className="workspace-page-title">Sales Tracking</h1>
-        </div>
-        <button type="button" className="primary" onClick={openRecordModal} disabled={projects.length === 0}>
-          + Record a sale
-        </button>
-      </div>
-
-      <p className="page-description">
-        Track individual sales for Crochet and Fuzzy Wire crafts, with combined totals and inventory valuation.
-      </p>
-
-
-
-      {/* KPI Cards */}
-      <div className="sales-kpi-grid">
-        <div className="sales-kpi-card">
-          <span className="kpi-label">
-            {categoryView === 'combined' ? 'Combined Revenue' : `${categoryView} Revenue`}
-          </span>
-          <strong className="kpi-value">{money(currentStats.totalRevenue, currency)}</strong>
-          {categoryView === 'combined' && (
-            <span className="kpi-breakdown">
-              Crochet: {money(crochetStats.totalRevenue, currency)} · Fuzzy: {money(fuzzyStats.totalRevenue, currency)}
-            </span>
-          )}
-        </div>
-
-        <div className="sales-kpi-card">
-          <span className="kpi-label">Units Sold</span>
-          <strong className="kpi-value">{currentStats.totalSold}</strong>
-          {categoryView === 'combined' && (
-            <span className="kpi-breakdown">
-              Crochet: {crochetStats.totalSold} sold · Fuzzy: {fuzzyStats.totalSold} sold
-            </span>
-          )}
-        </div>
-
-        <div className="sales-kpi-card">
-          <span className="kpi-label">Estimated Profit</span>
-          <strong className="kpi-value kpi-profit">{money(currentStats.totalProfit, currency)}</strong>
-          <span className="kpi-breakdown">From completed sales markups</span>
-        </div>
-
-        <div className="sales-kpi-card">
-          <span className="kpi-label">In-Stock Retail Value</span>
-          <strong className="kpi-value">{money(currentStats.inventoryValue, currency)}</strong>
-          <span className="kpi-breakdown">Ready-to-sell inventory</span>
-        </div>
-      </div>
-
-      {/* Visual Share Bar (Only in Combined view) */}
-      {categoryView === 'combined' && combinedStats.totalRevenue > 0 && (
-        <div className="sales-share-box">
-          <div className="share-labels">
-            <span>🧶 Crochet: {crochetShare}% ({money(crochetStats.totalRevenue, currency)})</span>
-            <span>✨ Fuzzy Wire: {fuzzyShare}% ({money(fuzzyStats.totalRevenue, currency)})</span>
-          </div>
-          <div className="share-bar">
-            <div className="share-segment crochet" style={{ width: `${crochetShare}%` }} />
-            <div className="share-segment fuzzy" style={{ width: `${fuzzyShare}%` }} />
-          </div>
-        </div>
-      )}
-
-      {/* Sales History Log */}
-      <div className="sales-log-section">
-        <div className="section-heading">
-          <h2>
-            {categoryView === 'combined' ? 'All Recent Sales' : `${categoryView} Sales History`}
-            <span className="count">{filteredSales.length}</span>
-          </h2>
-          <div className="sales-filter-dropdown">
-            <select
-              id="sales-category-select"
-              className="sales-category-select"
-              value={categoryView}
-              onChange={e => setCategoryView(e.target.value)}
-              aria-label="Filter sales by craft classification"
-            >
-              <option value="combined">🌟 Combined Sales ({combinedStats.count} items)</option>
-              <option value="Crochet">🧶 Crochet Sales ({crochetStats.count} items)</option>
-              <option value="Fuzzy Wire">✨ Fuzzy Wire Sales ({fuzzyStats.count} items)</option>
-            </select>
-          </div>
-        </div>
-
-        {filteredSales.length === 0 ? (
-          <div className="sales-empty">
-            <div className="sales-icon">🏷️</div>
-            <h3>No {categoryView === 'combined' ? '' : categoryView} sales recorded yet</h3>
-            <p>Click &ldquo;+ Record a sale&rdquo; above whenever you complete an order or sale.</p>
-          </div>
-        ) : (
-          <div className="sales-table-wrapper">
-            <table className="sales-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Product</th>
-                  <th>Classification</th>
-                  <th>Qty</th>
-                  <th>Unit Price</th>
-                  <th>Total</th>
-                  <th>Profit</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSales.map(sale => (
-                  <tr key={sale.id}>
-                    <td>{new Date(sale.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</td>
-                    <td><strong>{sale.projectName}</strong></td>
-                    <td>
-                      <span className={`category-pill ${sale.category === 'Fuzzy Wire' ? 'fuzzy' : 'crochet'}`}>
-                        {sale.category === 'Fuzzy Wire' ? '✨ Fuzzy Wire' : '🧶 Crochet'}
-                      </span>
-                    </td>
-                    <td>{sale.quantity}</td>
-                    <td>{money(sale.price, sale.currency)}</td>
-                    <td><strong>{money(sale.total, sale.currency)}</strong></td>
-                    <td className="profit-cell">+{money(sale.profit, sale.currency)}</td>
-                    <td className="note-cell">{sale.note || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
+      <div className="section-heading sales-register-heading"><div><p className="eyebrow">ORDER REGISTER</p><h1 id="sales-title" className="workspace-page-title">Sales &amp; Receipts</h1><p className="page-description">Track customer sales, channels, payments, and print receipts.</p></div><button type="button" className="primary" onClick={openRecordModal} disabled={!projects.length}><ShoppingBag size={15} /> Record Sale</button></div>
+      <div className="sales-register-toolbar"><div><Search size={16} /><input type="search" aria-label="Search sales" placeholder="Search customer, receipt number, or craft name?" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} /></div><nav aria-label="Sales channels">{['All Channels',...channels].map(value => <button key={value} className={channelFilter === value ? 'active' : ''} aria-pressed={channelFilter === value} onClick={() => { setChannelFilter(value); setPage(1) }}>{value}</button>)}</nav></div>
+      <div className="sales-register-summary">{[['SALES SHOWN',filteredSales.length],['TOTAL REVENUE',money(filteredSales.reduce((sum,s)=>sum+s.total,0))],['EST. PRODUCTION COST',money(filteredSales.reduce((sum,s)=>sum+s.total-s.profit,0))],['EST. PROFIT',money(filteredSales.reduce((sum,s)=>sum+s.profit,0))]].map(([label,value])=><article key={label}><span>{label}</span><strong>{value}</strong></article>)}</div>
+      <div className="sales-register-table"><table><thead><tr>{['Receipt #','Date','Customer','Channel','Items ordered','Payment','Amount','Est. profit','Receipt'].map(label=><th key={label}>{label}</th>)}</tr></thead><tbody>{filteredSales.slice((Math.min(page,Math.max(1,Math.ceil(filteredSales.length/10)))-1)*10,Math.min(page,Math.max(1,Math.ceil(filteredSales.length/10)))*10).map(sale=><tr key={`${sale.projectId}-${sale.id}`}><td><button className="receipt-number" onClick={()=>setReceipt(sale)}>{sale.receipt}</button></td><td>{new Date(sale.date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</td><td>{sale.customer}</td><td><span className="sales-register-tag">{sale.channel}</span></td><td>{sale.quantity} ? {sale.projectName}</td><td><span className="sales-register-tag">{sale.payment}</span></td><td>{money(sale.total)}</td><td className="sales-register-profit">{money(sale.profit)}</td><td><button className="receipt-slip" onClick={()=>setReceipt(sale)}><ReceiptText size={13} /> Slip</button></td></tr>)}{!filteredSales.length && <tr><td colSpan="9" className="sales-register-empty">No sales match this view. Record a sale to start your register.</td></tr>}</tbody></table></div>
+      <div className="sales-register-pagination"><span>{filteredSales.length} sales ? 10 per page</span><div><button disabled={page<=1} onClick={()=>setPage(page-1)}>Previous</button><span>Page {Math.min(page,Math.max(1,Math.ceil(filteredSales.length/10)))} of {Math.max(1,Math.ceil(filteredSales.length/10))}</span><button disabled={page>=Math.ceil(filteredSales.length/10)} onClick={()=>setPage(page+1)}>Next</button></div></div>
+      {receipt && <SaleModal onClose={()=>setReceipt(null)}><div className="receipt-print-toolbar"><span>Artisan Sales Slip</span><button onClick={()=>window.print()}><Printer size={15} /> Print</button><button aria-label="Close receipt" onClick={()=>setReceipt(null)}><X size={17} /></button></div><article className="artisan-receipt"><header><span className="receipt-logo">MZ</span><h2>MZ Crafties</h2><p>Mari&amp;Zect Crafties Studio</p><small>HANDCRAFTED FIBER ART &amp; CROCHET</small></header><dl className="receipt-meta"><div><dt>Receipt No.</dt><dd>{receipt.receipt}</dd></div><div><dt>Date</dt><dd>{new Date(receipt.date).toLocaleDateString('en-PH')}</dd></div><div><dt>Customer</dt><dd>{receipt.customer}</dd></div><div><dt>Channel</dt><dd>{receipt.channel}</dd></div></dl><table><thead><tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody><tr><td>{receipt.projectName}</td><td>{receipt.quantity}</td><td>{money(receipt.price)}</td><td>{money(receipt.total)}</td></tr></tbody></table><div className="receipt-total"><strong>TOTAL</strong><strong>{money(receipt.total)}</strong></div><p className="receipt-payment">Payment method <strong>{receipt.payment}</strong></p>{receipt.note && <p className="receipt-note">{receipt.note}</p>}<div className="receipt-care"><strong>Artisan Care Guide</strong><p>Handle handmade items gently. Follow the care instructions supplied with your item.</p></div><p className="receipt-thanks">Salamat for supporting local handmade craft!</p></article></SaleModal>}
       {/* Record Sale Modal */}
       {modalOpen && (
         <SaleModal onClose={() => setModalOpen(false)} saving={saving}>
-          <div className="modal-toolbar">
-            <span className="eyebrow">NEW TRANSACTION</span>
-            <button type="button" className="modal-close" onClick={() => setModalOpen(false)} disabled={saving}>
-              Close &times;
-            </button>
-          </div>
-
-          <h2>Record a Sale</h2>
-          <p className="page-description">
-            Records customer revenue, computes profit, and automatically decrements stock.
-          </p>
-
-          {error && <div className="notice" role="alert">{error}</div>}
-          {success && <div className="notice" style={{ background: '#ecfdf5', color: '#065f46' }}>{success}</div>}
-
-          <form onSubmit={handleRecordSale}>
-            <div className="detail-fields">
-              <label>
-                Select Item
-                <select
-                  value={selectedProjectId}
-                  onChange={e => handleProjectSelect(e.target.value)}
-                  disabled={saving}
-                >
-                  {projects.map(p => (
-                    <option key={p.id} value={p.id}>
-                      [{p.category || 'Crochet'}] {p.name} — {money(costs(p).total, p.currency)} (Stock: {p.stock ?? 0})
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="cost-fields">
-                <label>
-                  Quantity Sold
-                  <input
-                    type="number"
-                    min="1"
-                    max="100000"
-                    step="1"
-                    required
-                    value={quantity}
-                    onChange={e => setQuantity(e.target.value)}
-                    disabled={saving}
-                  />
-                </label>
-
-                <label>
-                  Selling Price per Unit ({currency})
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    required
-                    value={salePrice}
-                    onChange={e => setSalePrice(e.target.value)}
-                    disabled={saving}
-                  />
-                </label>
-              </div>
-
-              <label>
-                Sale Note / Customer Channel (Optional)
-                <input
-                  type="text"
-                  placeholder="e.g. Facebook Messenger order, Walk-in bazaar"
-                  value={saleNote}
-                  onChange={e => setSaleNote(e.target.value)}
-                  disabled={saving}
-                />
-              </label>
-
-              <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
-                <button type="button" className="secondary" onClick={() => setModalOpen(false)} disabled={saving}>
-                  Cancel
-                </button>
-                <button type="submit" className="primary" disabled={saving}>
-                  {saving ? 'Recording…' : 'Record Sale'}
-                </button>
-              </div>
-            </div>
+          <div className="customer-sale-header"><span><ShoppingBag size={18} aria-hidden="true" /></span><h2>Record Customer Sale</h2><button type="button" aria-label="Close sale form" disabled={saving} onClick={()=>setModalOpen(false)}><X size={18} /></button></div>
+          <form className="customer-sale-form" onSubmit={handleRecordSale}>
+            <fieldset disabled={saving}>
+              <div className="customer-sale-two"><label>Customer Name *<input required maxLength={120} value={customer} onChange={e=>setCustomer(e.target.value)} placeholder="e.g. Maria Clara" /></label><label>Sales Channel<select value={channel} onChange={e=>setChannel(e.target.value)}>{channels.map(value=><option key={value}>{value}</option>)}</select></label></div>
+              <label>Payment Method<select value={payment} onChange={e=>setPayment(e.target.value)}>{['Cash','GCash','Maya','Bank transfer','ShopeePay','Other'].map(value=><option key={value}>{value}</option>)}</select></label>
+              <div className="customer-sale-item"><label>Craft Item Sold<select value={selectedProjectId} onChange={e=>handleProjectSelect(e.target.value)}>{projects.map(p=><option key={p.id} value={p.id}>{p.name} ({money(costs(p).total)})</option>)}</select></label><label>Quantity<input required type="number" min="1" max="100000" step="1" value={quantity} onChange={e=>setQuantity(e.target.value)} /></label></div>
+              <label>Selling Price per Unit (?)<input required type="number" min="0" step="0.01" value={salePrice} onChange={e=>setSalePrice(e.target.value)} /></label>
+              <label>Order Notes / Delivery Details (Optional)<textarea maxLength={1000} rows={2} placeholder="e.g. gift wrap, delivery instructions?" value={saleNote} onChange={e=>setSaleNote(e.target.value)} /></label>
+            </fieldset>
+            <div className="customer-sale-total"><div><span>TOTAL DUE</span><strong>{money(Number(salePrice || 0)*Number(quantity || 0))}</strong></div><div><span>EST. PROFIT</span><strong>{money((Number(salePrice || 0)-(projects.find(p=>p.id===Number(selectedProjectId)) ? costs(projects.find(p=>p.id===Number(selectedProjectId))).total-costs(projects.find(p=>p.id===Number(selectedProjectId))).profit : 0))*Number(quantity || 0))}</strong></div></div>
+            {error && <div className="notice" role="alert">{error}</div>}
+            {success && <p role="status">{success}</p>}
+            <div className="customer-sale-footer"><button type="button" disabled={saving} onClick={()=>setModalOpen(false)}>Cancel</button><button type="submit" className="primary" disabled={saving}>{saving ? 'Saving?' : 'Save & Generate Slip'}</button></div>
           </form>
         </SaleModal>
       )}

@@ -1,0 +1,78 @@
+
+.sales-section { padding-top:24px; }
+.sales-register-heading { padding-bottom:20px; border-bottom:1px solid var(--line); }
+.sales-register-heading .eyebrow { font-size:10px; margin-bottom:6px; }
+.sales-register-heading .page-description { margin:6px 0 0; font-size:13px; }
+.sales-register-heading .primary { display:inline-flex; align-items:center; gap:8px; min-height:38px; font-size:12px; }
+.sales-register-toolbar { display:flex; align-items:center; justify-content:space-between; gap:16px; background:var(--surface); border:1px solid var(--line); border-radius:15px; padding:14px; margin:24px 0; }
+.sales-register-toolbar > div { position:relative; flex:1; min-width:220px; max-width:450px; }
+.sales-register-toolbar > div svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--muted); }
+.sales-register-toolbar input { min-height:40px; padding:10px 12px 10px 36px; font-size:12px; }
+.sales-register-toolbar nav { display:flex; flex-wrap:wrap; gap:6px; }
+.sales-register-toolbar button,.receipt-slip,.sales-register-pagination button { border:0; border-radius:7px; background:#f5f4f6; padding:8px 10px; font-size:10px; color:#514b5b; min-height:30px; }
+.sales-register-toolbar button.active { background:#5935ff; color:white; }
+.sales-register-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:24px; }
+.sales-register-summary article { padding:20px 16px; background:var(--surface); border:1px solid var(--line); border-radius:12px; }
+.sales-register-summary span { display:block; font-size:10px; color:var(--muted); margin-bottom:12px; }
+.sales-register-summary strong { font:20px ui-monospace,monospace; }
+.sales-register-summary article:nth-child(3) strong { color:#e99300; }
+.sales-register-summary article:nth-child(4) strong,.sales-register-profit { color:#009d76; }
+.sales-register-table { overflow:auto; border:1px solid var(--line); border-radius:15px; background:var(--surface); }
+.sales-register-table table { width:100%; border-collapse:collapse; font-size:11px; text-align:left; }
+.sales-register-table th { padding:14px; text-transform:uppercase; font-size:10px; font-weight:500; color:var(--muted); background:#faf9fa; }
+.sales-register-table td { padding:16px 14px; border-top:1px solid var(--line); }
+.sales-register-table td:nth-child(7),.sales-register-table td:nth-child(8) { white-space:nowrap; font-family:ui-monospace,monospace; }
+.receipt-number { background:none; border:0; padding:0; color:var(--accent); font:10px ui-monospace,monospace; overflow-wrap:anywhere; }
+.sales-register-tag { background:var(--tint); font-size:9px; padding:3px 6px; border-radius:5px; white-space:nowrap; }
+.receipt-slip { display:inline-flex; align-items:center; gap:5px; }
+.sales-register-empty { text-align:center; padding:40px !important; color:var(--muted); }
+.sales-register-pagination,.sales-register-pagination > div { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:11px; margin-top:14px; color:var(--muted); }
+.sale-modal:has(.artisan-receipt) { width:min(450px,calc(100vw - 24px)); padding:0; background:#fff; color:#252222; border-radius:18px; }
+.receipt-print-toolbar { display:flex; align-items:center; gap:8px; padding:12px 18px; background:#fafafa; border-bottom:1px solid #eee; font-size:11px; color:#777; }
+.receipt-print-toolbar > span { margin-right:auto; }
+.receipt-print-toolbar button { display:flex; align-items:center; gap:6px; border:0; border-radius:6px; background:#eee; color:#444; padding:6px; font-size:11px; }
+.artisan-receipt { padding:24px; color:#252222; background:white; }
+.artisan-receipt header { text-align:center; padding-bottom:20px; border-bottom:1px dashed #ddd; }
+.receipt-logo { display:inline-grid; place-items:center; width:40px; height:40px; border-radius:12px; background:#222; color:white; font-weight:700; margin-bottom:10px; }
+.artisan-receipt h2 { font-size:18px; margin:0 0 4px; color:#222 !important; }
+.artisan-receipt header p { margin:0 0 4px; font-size:12px; color:#777; }
+.artisan-receipt small { color:#999 !important; font-size:9px; }
+.receipt-meta { display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:10px; margin:20px 0; }
+.receipt-meta > div:nth-child(even) { text-align:right; }
+.receipt-meta dt { color:#999; margin-bottom:4px; }
+.receipt-meta dd { margin:0; overflow-wrap:anywhere; }
+.artisan-receipt table { width:100%; border-collapse:collapse; font-size:10px; text-align:left; }
+.artisan-receipt th { text-transform:uppercase; color:#888; padding:8px 0; border-bottom:1px solid #ddd; }
+.artisan-receipt td { padding:12px 3px 12px 0; border-bottom:1px dashed #ddd; }
+.receipt-total { display:flex; justify-content:space-between; border-top:2px solid #222; padding-top:14px; margin-top:30px; font-size:13px; }
+.receipt-payment { display:flex; justify-content:space-between; font-size:10px; color:#777; margin-top:12px; }
+.receipt-care { padding:16px; margin-top:22px; border:1px solid #e5e5e5; border-radius:12px; text-align:center; font-size:10px; }
+.receipt-care p { color:#888; line-height:1.8; margin:8px 0 0; }
+.receipt-thanks { text-align:center; font-size:11px; margin:24px 0 0; }
+.receipt-note { font-size:11px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.workspace-shell[data-theme="dark"] .sales-register-table th,.workspace-shell[data-theme="dark"] .sales-register-toolbar button:not(.active),.workspace-shell[data-theme="dark"] .receipt-slip { background:#302a38; color:#ded4ee; }
+@media(max-width:1200px) { .sales-register-toolbar { flex-wrap:wrap; } .sales-register-toolbar > div { max-width:none; } .sales-register-table table { min-width:1050px; } }
+@media(max-width:650px) { .sales-register-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .sales-register-heading { flex-wrap:wrap; gap:16px; } .sales-register-pagination { flex-wrap:wrap; } }
+@media print { body * { visibility:hidden !important; } .sale-modal:has(.artisan-receipt),.artisan-receipt,.artisan-receipt * { visibility:visible !important; } .sale-modal:has(.artisan-receipt) { position:absolute; inset:0; margin:0 auto; width:100%; max-width:450px; max-height:none; overflow:visible; border:0; box-shadow:none; } .receipt-print-toolbar { display:none; } .sale-modal::backdrop { background:white; } }
+
+.sale-modal:has(.customer-sale-form) { width:min(512px,calc(100vw - 24px)); padding:0; border-radius:18px; background:var(--surface); }
+.customer-sale-header { display:flex; align-items:center; gap:10px; padding:18px 24px; border-bottom:1px solid var(--line); }
+.customer-sale-header > span { display:grid; place-items:center; width:30px; height:30px; border-radius:9px; color:var(--accent); background:var(--tint); }
+.customer-sale-header h2 { flex:1; font-size:15px; margin:0; }
+.customer-sale-header button { display:grid; place-items:center; border:0; background:none; color:var(--muted); width:32px; height:32px; }
+.customer-sale-form { padding:24px; }
+.customer-sale-form fieldset { display:flex; flex-direction:column; gap:20px; border:0; margin:0; padding:0; min-width:0; }
+.customer-sale-form label { font-size:11px; font-weight:500; min-width:0; }
+.customer-sale-form :is(input,select,textarea) { margin-top:7px; min-height:36px; padding:8px 12px; font-size:12px; border-radius:9px; background:#fafafa; }
+.customer-sale-two { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.customer-sale-item { display:grid; grid-template-columns:minmax(0,1fr) 80px; gap:12px; }
+.customer-sale-total { display:flex; justify-content:space-between; padding:18px 14px; background:#fafafa; border:1px solid #f0edef; border-radius:13px; margin-top:22px; }
+.customer-sale-total span { display:block; font-size:9px; color:var(--muted); margin-bottom:7px; }
+.customer-sale-total strong { font:15px ui-monospace,monospace; }
+.customer-sale-total > div:last-child { text-align:right; }
+.customer-sale-total > div:last-child strong { color:#00a67b; }
+.customer-sale-footer { display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:24px; }
+.customer-sale-footer button { border:0; background:transparent; color:var(--muted); border-radius:10px; padding:10px 14px; min-height:40px; font-size:12px; }
+.customer-sale-footer button.primary { background:#5935ff; color:white; }
+.workspace-shell[data-theme="dark"] .customer-sale-total,.workspace-shell[data-theme="dark"] .customer-sale-form :is(input,select,textarea) { background:#302a38; border-color:#453b50; color:var(--ink); }
+@media(max-width:450px) { .customer-sale-two { grid-template-columns:1fr; gap:18px; } .customer-sale-form { padding:18px; } .customer-sale-header { padding:16px 18px; } }

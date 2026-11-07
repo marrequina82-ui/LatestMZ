@@ -56,7 +56,12 @@ BEGIN
                 INSERT INTO activity_history(user_id, project_id, project_name, action, detail)
                 VALUES(actor_id, NEW.id, NEW.data->>'name', 'stock_updated', 'Stock changed from ' || OLD.stock || ' to ' || NEW.stock);
             END IF;
-            IF NEW.data IS DISTINCT FROM OLD.data THEN
+            IF jsonb_array_length(COALESCE(NEW.data->'sales','[]'::jsonb)) > jsonb_array_length(COALESCE(OLD.data->'sales','[]'::jsonb)) THEN
+                INSERT INTO activity_history(user_id, project_id, project_name, action, detail)
+                VALUES(actor_id, NEW.id, NEW.data->>'name', 'sale_recorded',
+                  'Recorded sale: ' || COALESCE(NEW.data->'sales'->-1->>'quantity','1') || ' units at PHP ' || COALESCE(NEW.data->'sales'->-1->>'price','0') || ' each' ||
+                  CASE WHEN COALESCE(NEW.data->'sales'->-1->>'customer','') <> '' THEN ' for ' || (NEW.data->'sales'->-1->>'customer') ELSE '' END);
+            ELSIF NEW.data IS DISTINCT FROM OLD.data THEN
                 INSERT INTO activity_history(user_id, project_id, project_name, action, detail)
                 VALUES(actor_id, NEW.id, NEW.data->>'name', 'edited', 'Updated project details');
             END IF;
@@ -96,3 +101,11 @@ BEGIN
     RETURN assigned_id;
 END;
 $$ LANGUAGE plpgsql;
+
+CREATE TABLE IF NOT EXISTS materials (
+ id BIGSERIAL PRIMARY KEY,
+ data JSONB NOT NULL,
+ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON materials FROM PUBLIC;

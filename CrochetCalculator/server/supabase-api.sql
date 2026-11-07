@@ -35,6 +35,20 @@ BEGIN
         (SELECT h.id,h.project_id,h.project_name,h.action,h.detail,h.created_at,u.email
          FROM activity_history h JOIN users u ON u.id=h.user_id
          WHERE h.id<(v->>0)::BIGINT ORDER BY h.id DESC LIMIT 51) r;
+    WHEN 'materials_list' THEN
+      SELECT jsonb_agg(to_jsonb(r) ORDER BY r.id DESC) INTO result FROM (SELECT id,data FROM materials) r;
+    WHEN 'materials_create', 'materials_update', 'materials_delete' THEN
+      IF actor IS NULL OR NOT EXISTS(SELECT 1 FROM users WHERE id=actor) THEN RAISE EXCEPTION 'Invalid actor'; END IF;
+      IF operation='materials_create' THEN
+        WITH changed AS (INSERT INTO materials(data) VALUES((v->>0)::JSONB) RETURNING id,data)
+        SELECT jsonb_agg(to_jsonb(changed)) INTO result FROM changed;
+      ELSIF operation='materials_update' THEN
+        WITH changed AS (UPDATE materials SET data=(v->>0)::JSONB,updated_at=NOW() WHERE id=(v->>1)::BIGINT AND data=(v->>2)::JSONB RETURNING id,data)
+        SELECT jsonb_agg(to_jsonb(changed)) INTO result FROM changed;
+      ELSE
+        WITH changed AS (DELETE FROM materials WHERE id=(v->>0)::BIGINT RETURNING id)
+        SELECT jsonb_agg(to_jsonb(changed)) INTO result FROM changed;
+      END IF;
     WHEN 'projects', 'catalog' THEN
       SELECT jsonb_agg(to_jsonb(r) ORDER BY r.updated_at DESC) INTO result FROM
         (SELECT id,data,stock,updated_at FROM projects
@@ -76,3 +90,8 @@ GRANT EXECUTE ON FUNCTION public.tracker_api(TEXT,JSONB) TO service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.users, public.sessions, public.projects, public.activity_history TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE public.users_id_seq, public.projects_id_seq, public.activity_history_id_seq TO service_role;
 NOTIFY pgrst, 'reload schema';
+
+ALTER TABLE public.materials ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.materials FROM anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.materials TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public.materials_id_seq TO service_role;

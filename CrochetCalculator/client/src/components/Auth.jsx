@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { ArrowLeft, ArrowRight, Heart, LockKeyhole, Scissors, Sparkles } from 'lucide-react'
+import '../styles/login.css'
 
 async function authRequest(path, body) {
   const response = await fetch(`/api/auth/${path}`, body ? {
@@ -45,23 +47,10 @@ export default function Auth({ children }) {
   }
   if (checking) return <div className="auth-loading" role="status">Opening your crochet workspace…</div>
   if (user) return <>{error && <div className="notice" role="alert">{error}</div>}{children(user, logout)}</>
-  return <div className="app-shell auth-shell">
-    <a className="back-to-shop" href="#shop">← Back to the shop</a>
-    <main className="auth-layout woodland-login">
-      <div className="woodland-scenery" aria-hidden="true"><span className="woodland-sun" /><span className="woodland-hill hill-back" /><span className="woodland-hill hill-front" /><span className="woodland-branch branch-left" /><span className="woodland-branch branch-right" /><span className="woodland-petal petal-one" /><span className="woodland-petal petal-two" /><span className="woodland-petal petal-three" /></div>
-      <div className="login-composition">
-        <div className="login-wordmark"><span className="wordmark-sprig" aria-hidden="true">&#10087;</span><p className="wordmark-kicker">A LITTLE HOME FOR HANDMADE</p><h1>MZ <em>Crafties</em></h1><p className="wordmark-subtitle">Mari&amp;Zect Crafties</p></div>
-      <section className="auth-card" aria-labelledby="auth-title"><p className="eyebrow">LET’S MAKE SOMETHING LOVELY</p><h2 id="auth-title">Welcome back.</h2><p>Your next creation starts here. Log in to your workspace.</p>
-        <form onSubmit={submit}><fieldset disabled={busy} className="auth-fields">
-          <label className="pin-label" htmlFor="login-pin">Your 6-digit PIN</label>
-          <input id="login-pin" className="pin-input" type="password" inputMode="numeric" autoComplete="current-password" pattern="[0-9]{6}" required minLength={6} maxLength={6} value={pin} onChange={e => setPin(e.target.value.replace(/[^0-9]/g, '').slice(0, 6))} aria-describedby="pin-help" placeholder="••••••" />
-          <small id="pin-help">Enter the PIN assigned to you to open your workspace.</small>
-          {error && <div className="notice" role="alert">{error}</div>}
-          <button type="submit" className="primary">{busy ? 'One moment…' : 'Log in'}</button>
-        </fieldset></form><p className="assigned-account-note">Need a PIN? Contact the MZ Crafties workspace owner.</p>
-      </section>
-      <p className="woodland-signoff">Made slowly. Kept with love.</p>
-      </div>
-    </main>
+  return <div className="studio-login">
+    <header className="studio-login-header"><a className="studio-login-brand" href="#shop"><span>MZ</span><div>MZ Crafties<small>Mari&amp;Zect Crafties</small></div></a><a className="studio-back" href="#shop"><ArrowLeft size={15} /> Back to the shop</a></header>
+    <main className="studio-login-main"><section className="studio-login-story"><p className="studio-login-pill"><Sparkles size={14} /> A LITTLE HOME FOR HANDMADE</p><h1>Behind every<br />little treasure,<br /><em>there?s you.</em></h1><p>A space for your ideas, your everyday makes, and all the lovely things still to come.</p><div className="studio-login-art" aria-hidden="true"><div><Scissors size={32}/><p>Made slowly.<br />Loved for longer.</p><small>MARI &amp; ZECT CRAFTIES</small></div><span><Heart size={20}/></span></div><div className="studio-story-caption"><Heart size={14} /> Your hands. Your heart. Your little studio.</div></section>
+    <section className="studio-login-card" aria-labelledby="auth-title"><div className="studio-login-lock"><LockKeyhole size={23}/></div><p className="eyebrow">THE MAKER?S CORNER</p><h2 id="auth-title">Welcome back.</h2><p>Let?s make room for something lovely.<br />Sign in to your craft workspace.</p><form onSubmit={submit}><fieldset disabled={busy}><label htmlFor="login-pin">Your 6-digit PIN</label><input id="login-pin" type="password" inputMode="numeric" autoComplete="current-password" pattern="[0-9]{6}" required minLength={6} maxLength={6} value={pin} onChange={event=>setPin(event.target.value.replace(/[^0-9]/g,'').slice(0,6))} aria-describedby="pin-help" placeholder="??????" /><small id="pin-help">Use the private PIN assigned to your account.</small>{error && <div className="studio-login-error" role="alert">{error}</div>}<button type="submit">{busy ? 'Opening your studio?' : <>Enter your studio <ArrowRight size={16}/></>}</button></fieldset></form><div className="studio-login-help"><LockKeyhole size={13}/><span>Private workspace for the MZ Crafties team.</span></div><p className="studio-pin-help">Need a PIN? Contact your workspace owner.</p></section></main>
+    <footer className="studio-login-footer"><span>A little joy. A lot of heart.</span><span>Handmade with love by Mari &amp; Zect.</span></footer>
   </div>
 }
