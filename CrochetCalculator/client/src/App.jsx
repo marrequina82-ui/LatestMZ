@@ -8,8 +8,9 @@ import Activity from './components/Activity'
 import ImageCropper from './components/ImageCropper'
 import Storefront from './components/Storefront'
 import Sales from './components/Sales'
+import Dashboard from './components/Dashboard'
 
-const currentPage = () => ['sales', 'inventory', 'activity'].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'dashboard'
+const currentPage = () => ['projects', 'sales', 'inventory', 'activity'].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'dashboard'
 
 const blank = () => ({ category: 'Crochet', name: '', pattern: '', image: '', status: 'In progress', currency: 'PHP', yarn: '', materials: '', hours: '', timeSpent: '', timeUnit: 'hrs', rate: '', overhead: '', profit: '', sold: 0, sales: [] })
 const fieldsFor = category => [
@@ -150,11 +151,12 @@ function Workspace({ user, onLogout }) {
   return <div className="app-shell">
     <header className="topbar workspace-topbar"><a className="brand" href="/"><span className="brand-mark" aria-hidden="true">MZ</span><span>MZ Crafties<span className="brand-sub">Mari&amp;Zect Crafties</span></span></a><nav className="header-nav" aria-label="Main navigation">
       <a href="#dashboard" className={page === 'dashboard' ? 'active' : ''} aria-current={page === 'dashboard' ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg><span>Dashboard</span></a>
+      <a href="#projects" className={page === 'projects' ? 'active' : ''} aria-current={page === 'projects' ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v11H3Z M3 7V4h7l2 3" /></svg><span>Projects</span></a>
       <a href="#sales" className={page === 'sales' ? 'active' : ''} aria-current={page === 'sales' ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1 13H5L4 8Z M8 8V6a4 4 0 0 1 8 0v2 M9 14l2 2 4-4" /></svg><span>Sales</span></a>
       <a href="#inventory" className={page === 'inventory' ? 'active' : ''} aria-current={page === 'inventory' ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5Z M3 8l9 5 9-5 M12 13v9 M7 6l9 5" /></svg><span>Inventory</span></a>
       <a href="#activity" className={page === 'activity' ? 'active' : ''} aria-current={page === 'activity' ? 'page' : undefined}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11a9 9 0 1 1 2 7 M3 4v7h7 M12 7v5l3 2" /></svg><span>History</span></a>
     </nav><div className="account-actions"><span className="account-avatar" aria-hidden="true">{user.email.charAt(0).toUpperCase()}</span><span className="account-email" title={user.email}>{user.email}</span><button type="button" className="logout-button" disabled={saving} onClick={() => { if (dirty && !window.confirm('Discard unsaved changes and log out?')) return; onLogout() }}>Log out</button><span className="connection"><i className={connected ? 'online' : ''} />{connected ? 'Storage connected' : 'Storage offline'}</span></div></header>
-    <main key={page}>{page === 'inventory' ? <Inventory priceOf={p => money(costs(p).total, p.currency)} onStockChange={result => setProjects(list => list.map(p => p.id === result.id ? { ...p, stock: result.stock } : p))} /> : page === 'activity' ? <Activity /> : page === 'sales' ? <Sales projects={projects} money={money} costs={costs} onUpdateProject={saved => setProjects(list => list.map(p => p.id === saved.id ? saved : p))} /> : <><section className="intro"><div><p className="eyebrow">A LITTLE ORGANIZATION. MORE CREATION.</p><h1>Every stitch has a story.{' '}<em>Keep yours here.</em></h1><p>Your makes, patterns, and the true value of your time — all in one cozy place.</p></div><div className="project-count"><strong>{projects.length.toString().padStart(2, '0')}</strong><span>{crochetCount} Crochet · {fuzzyCount} Fuzzy Wire</span></div></section>
+    <main key={page}>{page === 'dashboard' ? <Dashboard projects={projects} costs={costs} money={money} loading={loading} error={!connected ? message : ''} onRetry={refresh} /> : page === 'inventory' ? <Inventory priceOf={p => money(costs(p).total, p.currency)} onStockChange={result => setProjects(list => list.map(p => p.id === result.id ? { ...p, stock: result.stock } : p))} /> : page === 'activity' ? <Activity /> : page === 'sales' ? <Sales projects={projects} money={money} costs={costs} onUpdateProject={saved => setProjects(list => list.map(p => p.id === saved.id ? saved : p))} /> : <><section className="intro"><div><p className="eyebrow">A LITTLE ORGANIZATION. MORE CREATION.</p><h1>Every stitch has a story.{' '}<em>Keep yours here.</em></h1><p>Your makes, patterns, and the true value of your time — all in one cozy place.</p></div><div className="project-count"><strong>{projects.length.toString().padStart(2, '0')}</strong><span>{crochetCount} Crochet · {fuzzyCount} Fuzzy Wire</span></div></section>
       <section className="library"><div className="section-heading"><div><p className="eyebrow">YOUR HANDMADE COLLECTION</p><h2>My projects <span className="count">{filtered.length}</span></h2></div><button type="button" className="primary" disabled={saving} onClick={() => select(null)}>+ New project</button></div>
       <div className="category-filter-bar">
         <button type="button" className={`cat-btn ${categoryFilter === 'all' ? 'active' : ''}`} onClick={() => setCategoryFilter('all')}>All crafts ({projects.length})</button>
@@ -216,9 +218,9 @@ function Workspace({ user, onLogout }) {
 }
 
 export default function App() {
-  const [admin, setAdmin] = useState(() => ['admin', 'dashboard', 'inventory', 'sales', 'activity'].includes(window.location.hash.slice(1)))
+  const [admin, setAdmin] = useState(() => ['admin', 'dashboard', 'projects', 'inventory', 'sales', 'activity'].includes(window.location.hash.slice(1)))
   useEffect(() => {
-    const update = () => setAdmin(['admin', 'dashboard', 'inventory', 'sales', 'activity'].includes(window.location.hash.slice(1)))
+    const update = () => setAdmin(['admin', 'dashboard', 'projects', 'inventory', 'sales', 'activity'].includes(window.location.hash.slice(1)))
     window.addEventListener('hashchange', update)
     return () => window.removeEventListener('hashchange', update)
   }, [])
