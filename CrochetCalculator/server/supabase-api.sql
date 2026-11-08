@@ -1,4 +1,11 @@
--- Run schema.sql first. Only the backend service role can invoke this function.
+-- Run schema.sql first for a new workspace. Existing workspaces can rerun this
+-- file to add materials support without replacing or deleting existing records.
+-- Only the backend service role can invoke this function.
+CREATE TABLE IF NOT EXISTS public.materials (
+  id BIGSERIAL PRIMARY KEY,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 CREATE OR REPLACE FUNCTION public.tracker_api(operation TEXT, args JSONB DEFAULT '{}')
 RETURNS JSONB LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = public, extensions AS $$

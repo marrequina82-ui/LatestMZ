@@ -48,6 +48,31 @@ Suggested price = (yarn + supplies + hours x hourly rate) x (1 + overhead / 100)
 
 ## Verification
 
+### Automatic stock deduction for sales
+
+For an existing Supabase workspace, run `server/sale-stock.sql` once in the
+Supabase SQL Editor. New databases initialized from `server/schema.sql` include
+this trigger automatically. This also works when the backend uses the Supabase
+HTTP API; no replacement of `tracker_api` is required.
+
+Sales history includes an Undo action. Undo marks a sale as undone, restores its stock once, and excludes it from totals while preserving the receipt. Existing workspaces must rerun `server/sale-stock.sql` to enable Undo.
+
+Each appended sale deducts its quantity in the same transaction as the sale.
+Insufficient stock or a stale sales history rejects the entire update. Retrying
+the same saved sales history does not deduct stock twice. This migration does not
+retroactively deduct earlier sales, because stock may already have been adjusted
+manually. Reconcile those quantities in Stocks once.
+
+To run the PostgreSQL regression test against a configured direct database:
+
+```powershell
+$env:RUN_DATABASE_TESTS='true'
+node --env-file=.env --test server/sale-stock.test.js
+Remove-Item Env:RUN_DATABASE_TESTS
+```
+
+The regression test uses a temporary table and rolls back all test data and DDL.
+
 ```powershell
 npm test
 npm run lint
@@ -55,3 +80,11 @@ npm run build
 ```
 
 API tests cover input validation, public data filtering, transaction rollback, session protection, request origin checks, actor attribution and stock conflicts. Live Supabase verification additionally requires your configured database.
+
+## Materials inventory setup
+
+If materials inventory fails while projects still load, rerun `server/supabase-api.sql`
+in the Supabase SQL Editor. Older deployed versions of `tracker_api` do not include
+`materials_list` and return "Unsupported operation". The updated SQL creates the
+materials table if needed, adds list/create/update/delete operations, and grants
+access only to the backend service role. Existing records are preserved.

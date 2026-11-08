@@ -13,6 +13,7 @@ export function summarizeProjects(projects, _currency, costs, now = new Date()) 
     const records = Array.isArray(p.sales) ? p.sales : []
     let quantity = 0, itemRevenue = 0
     for (const sale of records) {
+      if (sale.voidedAt) continue
       const qty = Math.max(0, number(sale.quantity))
       const amount = number(sale.price ?? breakdown.total) * qty
       const expense = unitCost * qty
