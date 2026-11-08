@@ -75,3 +75,14 @@
 .material-modal .notice { margin:8px 24px; }
 .workspace-shell[data-theme="dark"] .material-modal :is(input,select) { background:#302a38; border-color:#453b50; color:var(--ink); }
 @media(max-width:450px) { .material-form-three { grid-template-columns:1fr; gap:18px; } .material-modal header,.material-modal footer { padding-inline:18px; } .material-modal fieldset { padding-inline:18px; } }
+
+.materials-error-state { display:flex; align-items:center; flex-direction:column; text-align:center; padding:48px 24px; border:1px solid var(--line); background:var(--surface); border-radius:16px; margin-top:24px; }
+.materials-error-icon { display:grid; place-items:center; width:64px; height:64px; border-radius:18px; background:var(--tint); color:var(--accent); margin-bottom:20px; }
+.workspace-shell .materials-error-state h2 { font-size:20px; color:var(--ink); margin:0 0 10px; }
+.materials-error-state p { max-width:470px; margin:0 0 20px; color:var(--muted); line-height:1.7; font-size:13px; }
+.materials-error-state button { display:inline-flex; align-items:center; gap:8px; padding:11px 20px; margin-bottom:16px; }
+.materials-error-state > span:last-child,.materials-error-state small { font-size:11px; color:var(--muted); }
+.materials-error-state small { margin-bottom:16px; }
+
+.materials-category-select { width:220px; flex-shrink:0; min-height:40px; margin:0; padding:10px 32px 10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--surface); color:var(--ink); font-size:12px; cursor:pointer; }
+@media(max-width:640px) { .materials-category-select { width:100%; } }

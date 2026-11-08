@@ -23,3 +23,8 @@ test('Supabase API rejects publishable keys and hides upstream error details', a
   const db = createSupabaseDatabase({ SUPABASE_URL: 'https://test.supabase.co', SUPABASE_SECRET_KEY: 'sb_secret_test' }, async () => ({ ok: false, status: 404, json: async () => ({ code: 'PGRST202', message: 'private information' }) }))
   await assert.rejects(db.rpc('check'), error => error.code === 'PGRST202' && !error.message.includes('private'))
 })
+
+test('older materials API is classified without exposing upstream details', async () => {
+  const db = createSupabaseDatabase({ SUPABASE_URL: 'https://test.supabase.co', SUPABASE_SECRET_KEY: 'sb_secret_test' }, async () => ({ ok: false, status: 400, json: async () => ({ code: 'P0001', message: 'Unsupported operation', details: 'private database context' }) }))
+  await assert.rejects(db.query('SELECT id,data FROM materials ORDER BY id DESC'), error => error.reason === 'unsupported_operation' && error.code === 'P0001' && !error.message.includes('private'))
+})

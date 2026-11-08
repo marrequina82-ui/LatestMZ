@@ -1,3 +1,4 @@
+import { BusyLabel } from './Loading'
 import { useEffect, useRef, useState } from 'react'
 import { cropRect } from '../utils/crop'
 
@@ -50,14 +51,14 @@ export default function ImageCropper({ source, onApply, onCancel }) {
       <img ref={photo} src={source} alt="Photo crop preview" draggable="false" onLoad={event => setSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} onError={() => setError('This image could not be loaded. Please choose another photo.')} style={rect ? { width: `${size.width / rect.width * 100}%`, height: `${size.height / rect.height * 100}%`, left: `${-rect.x / rect.width * 100}%`, top: `${-rect.y / rect.height * 100}%` } : { visibility: 'hidden' }} />
       <div className="crop-grid" aria-hidden="true" />
     </div></div>
-    {!size && !error && <p role="status">Loading photo…</p>}
+    {!size && !error && <BusyLabel>Loading photo...</BusyLabel>}
     <fieldset disabled={!size || busy} className="crop-controls"><label>Crop shape<select value={shape} onChange={event => { setShape(event.target.value); setZoom(1); setPosition({ x: .5, y: .5 }) }}><option value="original">Original proportions</option><option value="1">Square (1:1)</option><option value="1.3333333333333333">Landscape (4:3)</option><option value="0.75">Portrait (3:4)</option></select></label>
       <label>Zoom <span>{zoom.toFixed(1)}×</span><input type="range" min="1" max="4" step="0.01" value={zoom} onChange={e => setZoom(Number(e.target.value))} /></label>
       <label>Horizontal position<input type="range" min="0" max="1" step="0.001" value={position.x} disabled={!rect || size.width - rect.width < .01} onChange={e => setPosition(p => ({ ...p, x: Number(e.target.value) }))} /></label>
       <label>Vertical position<input type="range" min="0" max="1" step="0.001" value={position.y} disabled={!rect || size.height - rect.height < .01} onChange={e => setPosition(p => ({ ...p, y: Number(e.target.value) }))} /></label>
     </fieldset>
     {error && <div className="notice" role="alert">{error}</div>}
-    <div className="crop-actions"><button type="button" className="modal-close" disabled={busy} onClick={onCancel}>Cancel</button><button type="button" className="modal-close" disabled={!size || busy} onClick={() => { setZoom(1); setShape('original'); setPosition({ x: .5, y: .5 }) }}>Reset</button><button type="button" className="primary" disabled={!size || busy} onClick={apply}>{busy ? 'Applying…' : 'Apply crop'}</button></div>
+    <div className="crop-actions"><button type="button" className="modal-close" disabled={busy} onClick={onCancel}>Cancel</button><button type="button" className="modal-close" disabled={!size || busy} onClick={() => { setZoom(1); setShape('original'); setPosition({ x: .5, y: .5 }) }}>Reset</button><button type="button" className="primary" disabled={!size || busy} onClick={apply}>{busy ? <BusyLabel>Applying crop...</BusyLabel> : 'Apply crop'}</button></div>
     <p className="helper">Apply the crop, then save your project to keep the photo.</p>
   </dialog>
 }

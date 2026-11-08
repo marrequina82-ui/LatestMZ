@@ -10,7 +10,7 @@ export function createSupabaseDatabase(env = process.env, request = fetch) {
       method: 'POST', headers, body: JSON.stringify({ operation, args }), signal: AbortSignal.timeout(15000),
     })
     const data = await response.json()
-    if (!response.ok) { const error = new Error('Supabase API request failed.'); error.code = data.code || `HTTP_${response.status}`; throw error }
+    if (!response.ok) { const error = new Error('Supabase API request failed.'); error.code = data.code || `HTTP_${response.status}`; if (/unsupported operation/i.test(data.message || '')) error.reason = 'unsupported_operation'; throw error }
     return { rows: data || [] }
   }
   return {

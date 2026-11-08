@@ -188,6 +188,14 @@ export function createHandler(databaseProvider = getDatabase) {
       }))
       return reply(method === 'POST' ? 201 : 200, result.data ? project(result) : { ...result, id: Number(result.id) })
     } catch (error) {
+      if (/^\/api\/materials(?:\/|\?|$)/.test(req.url) && (error.reason === 'unsupported_operation' || ['42P01', 'PGRST202', '42501'].includes(error.code))) {
+        error.status = 503
+        error.message = 'Materials inventory is not set up yet. The workspace owner needs to finish the database update before you can use it.'
+      }
+      if (['PST01', 'PST02', 'PST03', 'PST04'].includes(error.code)) {
+        error.status = error.code === 'PST03' ? 400 : 409
+        error.message = error.code === 'PST04' ? 'Undo would exceed the stock limit. Adjust stock first.' : error.code === 'PST01' ? 'Not enough stock. Refresh stock or reduce the sale quantity.' : error.code === 'PST02' ? 'Sales changed. Refresh and try again.' : 'Enter a valid whole sale quantity.'
+      }
       if (!error.status) console.error('API storage request failed:', error.code || error.name)
       reply(error.status || 503, { error: error.status ? error.message : 'Database is unavailable. Check the server Supabase configuration and retry.' })
     }
